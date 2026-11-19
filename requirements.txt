@@ -1,0 +1,17 @@
+# Core UI framework (required)
+PyQt6>=6.6.0
+
+# System stats, battery, and network monitoring (recommended)
+psutil>=5.9.0
+
+# Windows native media controls & album art (Spotify, Chrome, Edge, VLC, etc.)
+winrt-runtime>=2.0.0; sys_platform == "win32"
+winrt-Windows.Media.Control>=2.0.0; sys_platform == "win32"
+winrt-Windows.Storage.Streams>=2.0.0; sys_platform == "win32"
+
+# Windows real-time system volume HUD & slider
+pycaw>=20240210; sys_platform == "win32"
+comtypes>=1.4.0; sys_platform == "win32"
+
+# Display brightness HUD & slider
+screen-brightness-control>=0.23.0; sys_platform == "win32"
