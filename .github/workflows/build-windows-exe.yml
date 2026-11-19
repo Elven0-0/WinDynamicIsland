@@ -1,0 +1,85 @@
+name: Build WinDynamicIsland EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies and PyInstaller
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Generate application icon
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python -c "
+          import sys
+          from PyQt6.QtWidgets import QApplication
+          from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen
+          from PyQt6.QtCore import Qt
+
+          app = QApplication(sys.argv)
+          pix = QPixmap(256, 256)
+          pix.fill(Qt.GlobalColor.transparent)
+          p = QPainter(pix)
+          p.setRenderHint(QPainter.RenderHint.Antialiasing)
+          p.setBrush(QColor('#09090B'))
+          p.setPen(QPen(QColor('#38BDF8'), 12))
+          p.drawRoundedRect(20, 72, 216, 112, 56, 56)
+          p.setBrush(QColor('#38BDF8'))
+          p.setPen(Qt.PenStyle.NoPen)
+          p.drawEllipse(64, 104, 48, 48)
+          p.end()
+          pix.save('island.ico', 'ICO')
+          "
+
+      - name: Build WinDynamicIsland.exe with PyInstaller
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed `
+            --name "WinDynamicIsland" `
+            --icon "island.ico" `
+            --hidden-import=pycaw.pycaw `
+            --hidden-import=comtypes `
+            --hidden-import=comtypes.stream `
+            --hidden-import=psutil `
+            --hidden-import=screen_brightness_control `
+            --hidden-import=winrt.windows.media.control `
+            --hidden-import=winrt.windows.storage.streams `
+            dynamic_island.py
+
+      - name: Upload WinDynamicIsland.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinDynamicIsland-Windows-x64
+          path: dist/WinDynamicIsland.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub Release (on version tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/WinDynamicIsland.exe
+          generate_release_notes: true
