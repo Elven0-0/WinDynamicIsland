@@ -1526,6 +1526,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-try:
-    from PyQt6.QtCore import (
